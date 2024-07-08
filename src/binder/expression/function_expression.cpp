@@ -16,14 +16,15 @@ std::string ScalarFunctionExpression::getUniqueName(const std::string& functionN
 }
 
 std::string ScalarFunctionExpression::toStringInternal() const {
-    auto result = functionName + "(";
-    result += ExpressionUtil::toString(children);
-    if (functionName == "CAST") {
-        result += ", ";
-        result += bindData->resultType.toString();
-    }
-    result += ")";
-    return result;
+    // auto result = functionName + "(";
+    // result += ExpressionUtil::toString(children);
+    // if (functionName == "CAST") {
+    //     result += ", ";
+    //     result += bindData->resultType.toString();
+    // }
+    // result += ")";
+    // return result;
+    return "";
 }
 
 std::string AggregateFunctionExpression::getUniqueName(const std::string& functionName,

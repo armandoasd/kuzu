@@ -30,7 +30,7 @@ Value* FlatTuple::getValue(uint32_t idx) const {
     return values[idx].get();
 }
 
-std::string FlatTuple::toString() {
+std::string FlatTuple::toString(bool last) {
     std::string result;
     for (auto i = 0ul; i < values.size(); i++) {
         if (i != 0) {
@@ -38,7 +38,9 @@ std::string FlatTuple::toString() {
         }
         result += values[i]->toString();
     }
-    result += "\n";
+    if(!last) {
+        result += ",\n";
+    }
     return result;
 }
 

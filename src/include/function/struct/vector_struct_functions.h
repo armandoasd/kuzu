@@ -7,7 +7,7 @@ namespace kuzu {
 namespace function {
 
 struct StructPackFunctions {
-    static constexpr const char* name = "STRUCT_PACK";
+    static constexpr const char* name = "STRUCT_PACK_TEST";
 
     static function_set getFunctionSet();
 

@@ -325,7 +325,7 @@ Value::Value(LogicalType type, std::string val_)
 }
 
 Value::Value(LogicalType dataType_, std::vector<std::unique_ptr<Value>> children)
-    : dataType{std::move(dataType_)}, isNull_{false} {
+    : dataType{std::move(dataType_)}, isNull_{true} {
     this->children = std::move(children);
     childrenSize = this->children.size();
 }
@@ -569,7 +569,10 @@ void Value::copyValueFrom(const Value& other) {
 
 std::string Value::toString() const {
     if (isNull_) {
-        return "";
+        if (dataType.getLogicalTypeID() == LogicalTypeID::LIST) {
+            return "[]";
+        }
+        return "null";
     }
     switch (dataType.getLogicalTypeID()) {
     case LogicalTypeID::BOOL:
@@ -621,7 +624,7 @@ std::string Value::toString() const {
     case LogicalTypeID::UUID:
         return UUID::toString(val.int128Val);
     case LogicalTypeID::STRING:
-        return strVal;
+        return "\""+strVal+"\"";
     case LogicalTypeID::RDF_VARIANT: {
         return rdfVariantToString();
     }
@@ -676,6 +679,7 @@ void Value::copyFromRowLayoutList(const ku_list_t& list, const LogicalType& chil
     auto listNullBytes = reinterpret_cast<uint8_t*>(list.overflowPtr);
     auto numBytesForNullValues = NullBuffer::getNumBytesForNullValues(list.size);
     auto listValues = listNullBytes + numBytesForNullValues;
+    bool allNull = true;
     for (auto i = 0u; i < list.size; i++) {
         auto childValue = children[i].get();
         if (NullBuffer::isNull(listNullBytes, i)) {
@@ -683,8 +687,14 @@ void Value::copyFromRowLayoutList(const ku_list_t& list, const LogicalType& chil
         } else {
             childValue->setNull(false);
             childValue->copyFromRowLayout(listValues);
+            if (!childValue->isNull_) {
+                allNull = false;
+            }
         }
         listValues += numBytesPerElement;
+    }
+    if (allNull) {
+        isNull_ = true;
     }
 }
 
@@ -705,15 +715,20 @@ void Value::copyFromRowLayoutStruct(const uint8_t* kuStruct) {
     auto numFields = childrenSize;
     auto structNullValues = kuStruct;
     auto structValues = structNullValues + NullBuffer::getNumBytesForNullValues(numFields);
+    bool allNull = true;
     for (auto i = 0u; i < numFields; i++) {
         auto childValue = children[i].get();
         if (NullBuffer::isNull(structNullValues, i)) {
             childValue->setNull(true);
         } else {
+            allNull = false;
             childValue->setNull(false);
             childValue->copyFromRowLayout(structValues);
         }
         structValues += storage::StorageUtils::getDataTypeSize(childValue->dataType);
+    }
+    if (allNull) {
+        isNull_ = true;
     }
 }
 
@@ -1101,7 +1116,7 @@ std::string Value::structToString() const {
     std::string result = "{";
     auto fieldNames = StructType::getFieldNames(dataType);
     for (auto i = 0u; i < childrenSize; ++i) {
-        result += fieldNames[i] + ": ";
+        result += "\""+fieldNames[i] + "\": ";
         result += children[i]->toString();
         if (i != childrenSize - 1) {
             result += ", ";

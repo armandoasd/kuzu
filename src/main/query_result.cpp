@@ -118,7 +118,8 @@ std::string QueryResult::toString() {
         resetIterator();
         while (hasNext()) {
             getNext();
-            result += tuple->toString();
+            bool last = !hasNext();
+            result += tuple->toString(last);
         }
     } else {
         result = errMsg;
